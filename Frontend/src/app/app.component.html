@@ -1,0 +1,33 @@
+<header class="topbar"><div class="brand"><span class="logo">⌂</span><div><strong>PropertyLens</strong><small>MLS Listing Review</small></div></div><div class="top-note">DEMO APPLICATION <span class="live-dot"></span></div></header>
+<main>
+  <section class="hero"><div class="eyebrow">LISTINGS INTELLIGENCE</div><h1>One view. Every property.</h1><p>Explore real-estate records from multiple MLS sources, identify potential duplicate listings, and review conflicting data.</p></section>
+  <section class="stats" *ngIf="stats">
+    <div class="stat"><span>Source records</span><strong>{{stats.totalRecords}}</strong><small>Across all feeds</small></div>
+    <div class="stat"><span>Unique properties</span><strong>{{stats.uniqueProperties}}</strong><small>After matching</small></div>
+    <div class="stat"><span>Matched groups</span><strong>{{stats.matchedGroups}}</strong><small>Multi-source listings</small></div>
+    <div class="stat"><span>ZIP conflicts</span><strong>{{stats.conflictingZipGroups}}</strong><small>Need review</small></div>
+  </section>
+  <section class="workspace"><div class="section-heading"><div><div class="eyebrow">PROPERTY DIRECTORY</div><h2>Browse listings</h2></div><div class="count">{{groups.length}} matching properties</div></div>
+    <form class="filters" (ngSubmit)="applyFilters()">
+      <label class="search"><span>Search address or description</span><input type="search" name="search" [(ngModel)]="search" placeholder="Search homes, streets, keywords..."></label>
+      <label><span>City</span><select name="city" [(ngModel)]="city"><option value="">All cities</option><option *ngFor="let c of cities" [value]="c">{{c}}</option></select></label>
+      <label><span>Status</span><select name="status" [(ngModel)]="status"><option value="">All statuses</option><option value="active">Active</option><option value="pending">Pending</option></select></label>
+      <label><span>Min beds</span><input type="number" name="minBedrooms" min="0" [(ngModel)]="minBedrooms" placeholder="Any"></label>
+      <label><span>Min price</span><input type="number" name="minPrice" min="0" [(ngModel)]="minPrice" (ngModelChange)="validatePrices()" [class.invalid-input]="invalidPriceRange" [attr.aria-invalid]="invalidPriceRange" placeholder="No minimum"></label>
+      <label><span>Max price</span><input type="number" name="maxPrice" min="0" [(ngModel)]="maxPrice" (ngModelChange)="validatePrices()" [class.invalid-input]="invalidPriceRange" [attr.aria-invalid]="invalidPriceRange" placeholder="No maximum"></label>
+      <div class="price-validation" *ngIf="priceError" role="alert">{{priceError}}</div>
+      <label class="check"><input type="checkbox" name="duplicatesOnly" [(ngModel)]="duplicatesOnly"><span>Only multi-source matches</span></label>
+      <button class="btn primary" type="submit" [disabled]="invalidPriceRange">Apply filters</button><button class="btn secondary" type="button" (click)="reset()">Reset</button>
+    </form>
+    <div class="error" *ngIf="error">{{error}}</div>
+    <div class="loading" *ngIf="loading">Loading property records...</div>
+    <div class="empty" *ngIf="!loading && !error && !groups.length">No listings match these filters.</div>
+    <div class="property-list" *ngIf="!loading && !error">
+      <article class="property-card" *ngFor="let g of groups; trackBy: trackGroup">
+        <div class="property-main"><div class="house-icon">⌂</div><div class="property-info"><div class="address-line"><h3>{{g.preferred.address}}</h3><span class="status" [class.pending]="g.preferred.status==='pending'">{{g.preferred.status}}</span></div><p class="location">{{g.preferred.city}}, {{g.preferred.state}} {{g.preferred.zip}}</p><p class="description">{{g.preferred.description}}</p><div class="attributes"><span>{{g.preferred.bedrooms}} beds</span><span>{{g.preferred.bathrooms}} baths</span><span>{{g.preferred.sqft | number}} sq ft</span><span>Listed {{g.preferred.listedDate | date:'MMM d, y':'UTC'}}</span></div></div><div class="property-right"><strong class="price">{{g.preferred.price | currency:'USD':'symbol':'1.0-0'}}</strong><span class="sources">{{g.records.length}} source record{{g.records.length === 1 ? '' : 's'}}</span><button class="details-button" type="button" (click)="toggle(g.groupId)">{{expandedGroup === g.groupId ? 'Hide source details ↑' : 'Review sources →'}}</button></div></div>
+        <div class="flags" *ngIf="g.records.length > 1"><span class="match-tag">✓ Potential duplicate matched</span><span class="warning-tag" *ngIf="g.hasConflictingZip">⚠ ZIP mismatch</span><span class="warning-tag" *ngIf="g.hasConflictingPrice">⚠ Price difference</span></div>
+        <div class="source-panel" *ngIf="expandedGroup === g.groupId"><h4>Original MLS source records</h4><p class="review-note">Records remain independent. The newest listed date is used for the summary card; matching is heuristic and requires review.</p><div class="table-wrap"><table><thead><tr><th>ID</th><th>Source</th><th>Source address</th><th>ZIP</th><th>Price</th><th>Listed</th><th>Status</th></tr></thead><tbody><tr *ngFor="let r of g.records"><td>{{r.id}}</td><td>{{r.source}}</td><td>{{r.address}}</td><td [class.conflict]="g.hasConflictingZip">{{r.zip}}</td><td>{{r.price | currency:'USD':'symbol':'1.0-0'}}</td><td>{{r.listedDate | date:'MMM d, y':'UTC'}}</td><td>{{r.status}}</td></tr></tbody></table></div></div>
+      </article>
+    </div>
+  </section><footer>PropertyLens • Demonstration only • Data supplied in sample_listings.json</footer>
+</main>
